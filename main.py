@@ -4,14 +4,16 @@ from shutil import copy2 as cp
 from datetime import datetime as dt
 
 def get_img_filename(image: json):
+  """
+  Returns the image filename from a image object (frontImage, backImage, primary, secondary)
+  """
   return image['path'].split("/")[-1]
 
 
-def get_memory_location(memory: json):
-  return memory['location'] if 'location' in memory else 'N/A'
-
-
 def get_datetime_from_str(time: str):
+  """
+  Returns a datetime object form a time key
+  """
   format_string = "%Y-%m-%dT%H:%M:%S.%fZ"
   return dt.strptime(time, format_string)
 
@@ -32,7 +34,9 @@ def print_memory_info(memory: json):
   
 
 def apply_memory_on_imgs(memory: json):
-
+  """
+  Makes a copy of the front and back images and adds information from the memory object as exif tags to the image
+  """
   memory_dt = get_datetime_from_str(memory['takenTime'])
   img_names = ["./out/%s_%s.webp" % (memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), i) for i in ['front', 'back']]
 
