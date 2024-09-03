@@ -1,16 +1,20 @@
 import json
+import exiftool
 
+def get_img_filename(image: json):
+  return image['path'].split("/")[-1]
 
-def print_memories_info(data):
+def get_memory_location(memory: json):
+  return memory['location'] if 'location' in memory else 'N/A'
+
+def print_memories_info(data: json):
   n = 0
   for i in data:
     print("\nBeReal Nr. %s: " % n)
-    f_image = i['frontImage']
-    b_image = i['backImage']
     print(" - Time Taken: %s\n - Front Image: %s\n - Back Image: %s\n - Location: %s"
            % (i['takenTime'],
-           f_image['path'].split("/")[-1], b_image['path'].split("/")[-1],
-           i['location'] if 'location' in i else 'N/A'))
+           get_img_filename(i['frontImage']), get_img_filename(i['backImage']),
+           get_memory_location(i)))
     n+=1
   
 
