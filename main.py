@@ -2,7 +2,6 @@ import json
 from exiftool import ExifToolHelper as et
 from shutil import copy2 as cp
 from datetime import datetime as dt
-import time
 
 def get_img_filename(image: json):
   return image['path'].split("/")[-1]
@@ -35,12 +34,21 @@ def print_memory_info(memory: json):
 def apply_memory_on_imgs(memory: json):
 
   memory_dt = get_datetime_from_str(memory['takenTime'])
-  memory_dt_str = memory_dt.strftime('%Y-%m-%d_%H-%M-%S')
+  img_names = ["./out/%s_%s.webp" % (memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), i) for i in ['front', 'back']]
 
-  cp("./Photos/post/%s" % get_img_filename(memory['frontImage']),
-     "./out/%s_front.webp" % memory_dt_str)
-  cp("./Photos/post/%s" % get_img_filename(memory['backImage']),
-     "./out/%s_back.webp" % memory_dt_str)
+  cp("./Photos/post/%s" % get_img_filename(memory['frontImage']), img_names[0])
+  cp("./Photos/post/%s" % get_img_filename(memory['backImage']), img_names[1])
+
+  if 'location' in memory:
+    et().set_tags(img_names,
+                  tags={"DateTimeOriginal": memory_dt.strftime("%Y:%m:%d %H:%M:%S"),
+                        "GPSLatitude*": memory['location']['latitude'],
+                        "GPSLongitude*": memory['location']['longitude']},
+                  params=["-P", "-overwrite_original"])
+  else:
+    et().set_tags(img_names,
+                  tags={"DateTimeOriginal": memory_dt.strftime("%Y:%m:%d %H:%M:%S")},
+                  params=["-P", "-overwrite_original"])
 
 
 
@@ -50,6 +58,7 @@ if __name__ == '__main__':
   
   apply_memory_on_imgs(json.load(f)[0])
 
+  # et().set_tags("2024-09-01_12-54-39_front.jpg", tags={"File:FileCreateDate": dt.strftime(dt.now(), "%Y:%m:%d %H:%M:%S")}, params=["-P", "-overwrite_original"])
   # n = 0
   # for i in json.load(f):
   #   print("\nBeReal Nr. %s: " % n)
