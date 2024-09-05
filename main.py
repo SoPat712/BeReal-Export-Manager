@@ -28,10 +28,12 @@ def init_global_var(args: argparse.Namespace):
 
   if args.timespan:
     temp_times = args.timespan.strip().split("-")
-    time_span = ('*' if temp_times[0] == '*' else dt.strptime(temp_times[0], '%d.%m.%Y'),
-                 '*' if temp_times[1] == '*' else dt.strptime(temp_times[1], '%d.%m.%Y'))
+    time_span = (dt.fromtimestamp(0) if temp_times[0] == '*' else dt.strptime(temp_times[0], '%d.%m.%Y'),
+                 dt.now() if temp_times[1] == '*' else dt.strptime(temp_times[1], '%d.%m.%Y'))
   elif args.year:
     time_span = (dt(args.year, 1, 1), dt(args.year, 12, 31))
+  else:
+    time_span = (dt.fromtimestamp(0), dt.now())
   
   if args.path:
     out_path = args.path.strip().removesuffix('/')
