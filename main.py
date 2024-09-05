@@ -1,4 +1,5 @@
 import json
+import os
 from exiftool import ExifToolHelper as et
 from shutil import copy2 as cp
 import datetime
@@ -12,6 +13,7 @@ def init_parser():
                                                          "Valid format: 'DD.MM.YYYY-DD.MM.YYYY'\n"\
                                                          "Wildcards can be used: 'DD.MM.YYYY-*'")
   parser.add_argument('-y', '--year', type=int, help="Exports the given year")
+  parser.add_argument('-p', '--path', type=str, help="Set a custom output path (default ./out)")
 
   args = parser.parse_args()
   if args.year and args.timespan:
@@ -22,6 +24,7 @@ def init_parser():
 
 def init_global_var(args: argparse.Namespace):
   global time_span
+  global out_path
 
   if args.timespan:
     temp_times = args.timespan.strip().split("-")
@@ -29,6 +32,11 @@ def init_global_var(args: argparse.Namespace):
                  '*' if temp_times[1] == '*' else dt.strptime(temp_times[1], '%d.%m.%Y'))
   elif args.year:
     time_span = (dt(args.year, 1, 1), dt(args.year, 12, 31))
+  
+  if args.path:
+    out_path = args.path.strip().removesuffix('/')
+  else:
+    out_path = "./out"
 
 
 
@@ -47,15 +55,15 @@ def get_datetime_from_str(time: str):
   return dt.strptime(time, format_string)
 
 
-def apply_memory_on_imgs(memory: json):
+def apply_memory_on_imgs(memory: json, memory_dt: datetime):
   """
   Makes a copy of the front and back images and adds information from the memory object as exif tags to the image
   """
-  memory_dt = get_datetime_from_str(memory['takenTime'])
-  img_names = ["./out/%s_%s.webp" % (memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), temp_times) for temp_times in ['front', 'back']]
+  img_names = ["%s/%s_%s.webp" % (out_path, memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), temp_times)
+               for temp_times in ['front', 'back']]
 
-  cp("./Photos/post/%s" % get_img_filename(memory['frontImage']), img_names[0])
-  cp("./Photos/post/%s" % get_img_filename(memory['backImage']), img_names[1])
+  for img_type, img_name in zip(['frontImage', 'backImage'], img_names):
+    cp("./Photos/post/%s" % get_img_filename(memory[img_type]), img_name)
 
   if 'location' in memory:
     et().set_tags(img_names,
@@ -71,9 +79,10 @@ def apply_memory_on_imgs(memory: json):
 
 def export_images(memories: json):
 
-
-  for temp_times in memories:
-    apply_memory_on_imgs(temp_times)
+  for i in memories:
+    memory_dt = get_datetime_from_str(i['takenTime'])
+    if time_span[0] <= memory_dt <= time_span[1]:
+      apply_memory_on_imgs(i, memory_dt)
 
 
 
@@ -81,8 +90,12 @@ if __name__ == '__main__':
   args = init_parser()
   init_global_var(args)
 
+  if not os.path.exists(out_path):
+    os.makedirs(out_path)
+
   f = open('memories.json')
   
-  # export_images(json.load(f))
+  
+  export_images(json.load(f))
 
   f.close()
