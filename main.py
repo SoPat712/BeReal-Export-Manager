@@ -60,7 +60,7 @@ def verbose_msg(msg: str):
   if verbose: print(msg)
 
 
-def printProgressBar (iteration: int, total: int, prefix: str='', suffix: str='', decimals: str=1, length: int=100, fill: str='█', printEnd: str="\r"):
+def printProgressBar (iteration: int, total: int, prefix: str='', suffix: str='', decimals: str=1, length: int=60, fill: str='█', printEnd: str="\r"):
     """
     Call in a loop to create terminal progress bar
     Not my creation: https://stackoverflow.com/questions/3173320/text-progress-bar-in-terminal-with-block-characters
@@ -98,32 +98,27 @@ def get_datetime_from_str(time: str):
   return dt.strptime(time, format_string)
 
 
-def export_memory(memory: json, memory_dt: datetime):
+def export_img(old_img_name: str, img_name: str, img_dt: datetime, img_location):
   """
-  Makes a copy of the front and back images and adds information from the memory object as exif tags to the image
+  Makes a copy of the image and adds exif tags to the image
   """
-  # The new image file names
-  img_names = ["%s/%s_%s.webp" % (out_path, memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), temp_times)
-               for temp_times in ['front', 'back']]
 
   # Makes a copy of the images
-  for img_type, img_name in zip(['frontImage', 'backImage'], img_names):
-    img_filename = get_img_filename(memory[img_type])
-    verbose_msg("Export %s image to %s" % (img_filename, img_name))
-    cp("./Photos/post/%s" % img_filename, img_name)
+  verbose_msg("Export %s image to %s" % (old_img_name, img_name))
+  cp(old_img_name, img_name)
 
   # Add metadata to the images with or without location
-  if 'location' in memory:
-    verbose_msg("Add metadata to image:\n - DateTimeOriginal=%s\n - GPS=(%s, %s)" % (memory_dt, memory['location']['latitude'], memory['location']['longitude']))
-    et().set_tags(img_names,
-                  tags={"DateTimeOriginal": memory_dt.strftime("%Y:%m:%d %H:%M:%S"),
-                        "GPSLatitude*": memory['location']['latitude'],
-                        "GPSLongitude*": memory['location']['longitude']},
+  if img_location:
+    verbose_msg("Add metadata to image:\n - DateTimeOriginal=%s\n - GPS=(%s, %s)" % (img_dt, img_location['latitude'], img_location['longitude']))
+    et().set_tags(img_name,
+                  tags={"DateTimeOriginal": img_dt.strftime("%Y:%m:%d %H:%M:%S"),
+                        "GPSLatitude*": img_location['latitude'],
+                        "GPSLongitude*": img_location['longitude']},
                   params=["-P", "-overwrite_original"])
   else:
-    verbose_msg("Add metadata to image:\n - DateTimeOriginal=%s" % memory_dt)
-    et().set_tags(img_names,
-                  tags={"DateTimeOriginal": memory_dt.strftime("%Y:%m:%d %H:%M:%S")},
+    verbose_msg("Add metadata to image:\n - DateTimeOriginal=%s" % img_dt)
+    et().set_tags(img_name,
+                  tags={"DateTimeOriginal": img_dt.strftime("%Y:%m:%d %H:%M:%S")},
                   params=["-P", "-overwrite_original"])
 
 
@@ -131,20 +126,34 @@ def export_memories(memories: json):
   """
   Exports all memories from the Photos/post directory to the corresponding output folder
   """
+  out_path_memories = out_path + "/memories"
   memory_count = len(memories)
+
+  if not os.path.exists(out_path_memories):
+    verbose_msg("Create %s folder for memories output" % out_path_memories)
+    os.makedirs(out_path_memories)
 
   for i, n in zip(memories, range(memory_count)):
     memory_dt = get_datetime_from_str(i['takenTime'])
+    types = ['front', 'back']
+    img_names = ["%s/%s_%s.webp" % (out_path_memories, memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), type)
+                 for type in types]
 
     # Checks if the memory is in the time span
     if time_span[0] <= memory_dt <= time_span[1]:
-      verbose_msg("\nExport Memory nr %s:" % n)
-      export_memory(i, memory_dt)
+      for img_name, type in zip(img_names, types):
+        old_img_name = "./Photos/post/" + get_img_filename(i[type+'Image'])
+
+        verbose_msg("\nExport Memory nr %s %s:" % (n, type))
+        if 'location' in i:
+          export_img(old_img_name, img_name, memory_dt, i['location'])
+        else:
+          export_img(old_img_name, img_name, memory_dt)
 
     if verbose:
-      printProgressBar(n+1, memory_count, prefix="Exporting Images", suffix=("- Current Date: %s" % memory_dt.strftime("%Y-%m-%d")), printEnd='\n')
+      printProgressBar(n+1, memory_count, prefix="Exporting Memories", suffix=("- " + memory_dt.strftime("%Y-%m-%d")), printEnd='\n')
     else:
-      printProgressBar(n+1, memory_count, prefix="Exporting Images")
+      printProgressBar(n+1, memory_count, prefix="Exporting Memories", suffix=("- " + memory_dt.strftime("%Y-%m-%d")))
 
 
 def export_realmojis(realmojis: json):
@@ -170,10 +179,6 @@ def export_realmojis(realmojis: json):
 if __name__ == '__main__':
   args = init_parser()
   init_global_var(args)
-
-  if not os.path.exists(out_path):
-    verbose_msg("Create %s folder for output" % out_path)
-    os.makedirs(out_path)
 
   verbose_msg("Open memories.json file")
   f = open('memories.json')
