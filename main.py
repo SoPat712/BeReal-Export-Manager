@@ -14,6 +14,7 @@ def init_parser():
                                                          "Wildcards can be used: 'DD.MM.YYYY-*'")
   parser.add_argument('-y', '--year', type=int, help="Exports the given year")
   parser.add_argument('-p', '--path', type=str, help="Set a custom output path (default ./out)")
+  parser.add_argument('-v', '--verbose', action=argparse.BooleanOptionalAction, help="Explain what is being done")
 
   args = parser.parse_args()
   if args.year and args.timespan:
@@ -25,6 +26,7 @@ def init_parser():
 def init_global_var(args: argparse.Namespace):
   global time_span
   global out_path
+  global verbose
 
   if args.timespan:
     temp_times = args.timespan.strip().split("-")
@@ -40,7 +42,11 @@ def init_global_var(args: argparse.Namespace):
   else:
     out_path = "./out"
 
+  verbose = args.verbose
 
+
+def verbose_msg(msg: str):
+  if verbose: print(msg)
 
 def get_img_filename(image: json):
   """
@@ -61,19 +67,24 @@ def apply_memory_on_imgs(memory: json, memory_dt: datetime):
   """
   Makes a copy of the front and back images and adds information from the memory object as exif tags to the image
   """
+
   img_names = ["%s/%s_%s.webp" % (out_path, memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), temp_times)
                for temp_times in ['front', 'back']]
 
   for img_type, img_name in zip(['frontImage', 'backImage'], img_names):
-    cp("./Photos/post/%s" % get_img_filename(memory[img_type]), img_name)
+    img_filename = get_img_filename(memory[img_type])
+    verbose_msg("Export %s image to %s" % (img_filename, img_name))
+    cp("./Photos/post/%s" % img_filename, img_name)
 
   if 'location' in memory:
+    verbose_msg("Add metadata to image:\n - DateTimeOriginal=%s\n - GPS=(%s, %s)" % (memory_dt, memory['location']['latitude'], memory['location']['longitude']))
     et().set_tags(img_names,
                   tags={"DateTimeOriginal": memory_dt.strftime("%Y:%m:%d %H:%M:%S"),
                         "GPSLatitude*": memory['location']['latitude'],
                         "GPSLongitude*": memory['location']['longitude']},
                   params=["-P", "-overwrite_original"])
   else:
+    verbose_msg("Add metadata to image:\n - DateTimeOriginal=%s" % memory_dt)
     et().set_tags(img_names,
                   tags={"DateTimeOriginal": memory_dt.strftime("%Y:%m:%d %H:%M:%S")},
                   params=["-P", "-overwrite_original"])
@@ -81,9 +92,10 @@ def apply_memory_on_imgs(memory: json, memory_dt: datetime):
 
 def export_images(memories: json):
 
-  for i in memories:
+  for i, n in zip(memories, range(len(memories))):
     memory_dt = get_datetime_from_str(i['takenTime'])
     if time_span[0] <= memory_dt <= time_span[1]:
+      verbose_msg("\nExport BeReal nr %s:" % n)
       apply_memory_on_imgs(i, memory_dt)
 
 
@@ -93,11 +105,14 @@ if __name__ == '__main__':
   init_global_var(args)
 
   if not os.path.exists(out_path):
+    verbose_msg("Create %s folder for output" % out_path)
     os.makedirs(out_path)
 
+  verbose_msg("Open memories.json file")
   f = open('memories.json')
   
   
+  verbose_msg("Start exporting images")
   export_images(json.load(f))
 
   f.close()
