@@ -17,9 +17,9 @@ def init_parser():
                                                          "Wildcards can be used: 'DD.MM.YYYY-*'")
   parser.add_argument('-y', '--year', type=int, help="Exports the given year")
   parser.add_argument('-p', '--path', type=str, help="Set a custom output path (default ./out)")
-  parser.add_argument('-v', '--verbose', action=argparse.BooleanOptionalAction, help="Explain what is being done")
-  parser.add_argument('--no-memories', action='store_false', dest='memories', help="Don't export the memories")
-  parser.add_argument('--no-realmojis', action='store_false', dest='realmojis', help="Don't export the realmojis")
+  parser.add_argument('-v', '--verbose', action='store_true', default=False, help="Explain what is being done")
+  parser.add_argument('--no-memories', action='store_false', default=True, dest='memories', help="Don't export the memories")
+  parser.add_argument('--no-realmojis', action='store_false', default=True, dest='realmojis', help="Don't export the realmojis")
 
   args = parser.parse_args()
   if args.year and args.timespan:
@@ -173,15 +173,15 @@ def export_realmojis(realmojis: json):
     realmoji_dt = get_datetime_from_str(i['postedAt'])
     img_name = "%s/%s.webp" % (out_path_realmojis, realmoji_dt.strftime('%Y-%m-%d_%H-%M-%S'))
 
-    # Checks if the memory is in the time span
+    # Checks if the realmojis is in the time span
     if time_span[0] <= realmoji_dt <= time_span[1] and i['isInstant']:
       verbose_msg("\nExport Memory nr %s:" % n)
       export_img("./Photos/realmoji/" + get_img_filename(i['media']), img_name, realmoji_dt)
 
     if verbose:
-      printProgressBar(n+1, realmoji_count, prefix="Exporting Images", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")), printEnd='\n')
+      printProgressBar(n+1, realmoji_count, prefix="Exporting Realmojis", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")), printEnd='\n')
     else:
-      printProgressBar(n+1, realmoji_count, prefix="Exporting Images", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")))
+      printProgressBar(n+1, realmoji_count, prefix="Exporting Realmojis", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")))
 
 
 if __name__ == '__main__':
