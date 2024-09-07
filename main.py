@@ -98,7 +98,7 @@ def get_datetime_from_str(time: str):
   return dt.strptime(time, format_string)
 
 
-def apply_memory_on_imgs(memory: json, memory_dt: datetime):
+def export_memory(memory: json, memory_dt: datetime):
   """
   Makes a copy of the front and back images and adds information from the memory object as exif tags to the image
   """
@@ -127,9 +127,9 @@ def apply_memory_on_imgs(memory: json, memory_dt: datetime):
                   params=["-P", "-overwrite_original"])
 
 
-def export_images(memories: json):
+def export_memories(memories: json):
   """
-  Exports all images from the Photos/post directory to the corresponding output folder
+  Exports all memories from the Photos/post directory to the corresponding output folder
   """
   memory_count = len(memories)
 
@@ -138,14 +138,33 @@ def export_images(memories: json):
 
     # Checks if the memory is in the time span
     if time_span[0] <= memory_dt <= time_span[1]:
-      verbose_msg("\nExport BeReal nr %s:" % n)
-      apply_memory_on_imgs(i, memory_dt)
+      verbose_msg("\nExport Memory nr %s:" % n)
+      export_memory(i, memory_dt)
 
     if verbose:
       printProgressBar(n+1, memory_count, prefix="Exporting Images", suffix=("- Current Date: %s" % memory_dt.strftime("%Y-%m-%d")), printEnd='\n')
     else:
       printProgressBar(n+1, memory_count, prefix="Exporting Images")
 
+
+def export_realmojis(realmojis: json):
+  """
+  Exports all realmojis from the Photos/realmoji directory to the corresponding output folder
+  """
+  realmoji_count = len(realmojis)
+
+  for i, n in zip(realmojis, realmoji_count):
+    realmoji_dt = get_datetime_from_str(i['postedAt'])
+
+    # Checks if the memory is in the time span
+    if time_span[0] <= realmoji_dt <= time_span[1]:
+      verbose_msg("\nExport Memory nr %s:" % n)
+      # export_memory(i, realmoji_dt)
+
+    if verbose:
+      printProgressBar(n+1, realmoji_dt, prefix="Exporting Images", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")), printEnd='\n')
+    else:
+      printProgressBar(n+1, realmoji_dt, prefix="Exporting Images")
 
 
 if __name__ == '__main__':
@@ -161,6 +180,6 @@ if __name__ == '__main__':
   
   
   verbose_msg("Start exporting images")
-  export_images(json.load(f))
+  export_memories(json.load(f))
 
   f.close()
