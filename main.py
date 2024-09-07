@@ -48,6 +48,29 @@ def init_global_var(args: argparse.Namespace):
 def verbose_msg(msg: str):
   if verbose: print(msg)
 
+
+def printProgressBar (iteration: int, total: int, prefix: str='', suffix: str='', decimals: str=1, length: int=100, fill: str='█', printEnd: str="\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+
+
 def get_img_filename(image: json):
   """
   Returns the image filename from a image object (frontImage, backImage, primary, secondary)
@@ -91,12 +114,19 @@ def apply_memory_on_imgs(memory: json, memory_dt: datetime):
 
 
 def export_images(memories: json):
+  memory_count = len(memories)
 
-  for i, n in zip(memories, range(len(memories))):
+  for i, n in zip(memories, range(memory_count)):
     memory_dt = get_datetime_from_str(i['takenTime'])
+
     if time_span[0] <= memory_dt <= time_span[1]:
       verbose_msg("\nExport BeReal nr %s:" % n)
       apply_memory_on_imgs(i, memory_dt)
+
+    if verbose:
+      printProgressBar(n+1, memory_count, prefix="Exporting Images", suffix=("- Current Date: %s" % memory_dt.strftime("%Y-%m-%d")), printEnd='\n')
+    else:
+      printProgressBar(n+1, memory_count, prefix="Exporting Images")
 
 
 
