@@ -8,6 +8,9 @@ import argparse
 
 
 def init_parser():
+  """
+  Initializes the argparse module
+  """
   parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
   parser.add_argument('-t', '--timespan', type=str, help="Exports the given timespan\n"\
                                                          "Valid format: 'DD.MM.YYYY-DD.MM.YYYY'\n"\
@@ -18,16 +21,20 @@ def init_parser():
 
   args = parser.parse_args()
   if args.year and args.timespan:
-    print("Timespan will be prioritized")
+    print("Timespan argument will be prioritized")
 
   return args
 
 
 def init_global_var(args: argparse.Namespace):
+  """
+  Initializes global variables
+  """
   global time_span
   global out_path
   global verbose
 
+  # Initialize time_span
   if args.timespan:
     temp_times = args.timespan.strip().split("-")
     time_span = (dt.fromtimestamp(0) if temp_times[0] == '*' else dt.strptime(temp_times[0], '%d.%m.%Y'),
@@ -37,6 +44,7 @@ def init_global_var(args: argparse.Namespace):
   else:
     time_span = (dt.fromtimestamp(0), dt.now())
   
+  # Initialize out_path
   if args.path:
     out_path = args.path.strip().removesuffix('/')
   else:
@@ -46,12 +54,16 @@ def init_global_var(args: argparse.Namespace):
 
 
 def verbose_msg(msg: str):
+  """
+  Prints an explanation what is being done to the terminal
+  """
   if verbose: print(msg)
 
 
 def printProgressBar (iteration: int, total: int, prefix: str='', suffix: str='', decimals: str=1, length: int=100, fill: str='█', printEnd: str="\r"):
     """
     Call in a loop to create terminal progress bar
+    Not my creation: https://stackoverflow.com/questions/3173320/text-progress-bar-in-terminal-with-block-characters
     @params:
         iteration   - Required  : current iteration (Int)
         total       - Required  : total iterations (Int)
@@ -90,15 +102,17 @@ def apply_memory_on_imgs(memory: json, memory_dt: datetime):
   """
   Makes a copy of the front and back images and adds information from the memory object as exif tags to the image
   """
-
+  # The new image file names
   img_names = ["%s/%s_%s.webp" % (out_path, memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), temp_times)
                for temp_times in ['front', 'back']]
 
+  # Makes a copy of the images
   for img_type, img_name in zip(['frontImage', 'backImage'], img_names):
     img_filename = get_img_filename(memory[img_type])
     verbose_msg("Export %s image to %s" % (img_filename, img_name))
     cp("./Photos/post/%s" % img_filename, img_name)
 
+  # Add metadata to the images with or without location
   if 'location' in memory:
     verbose_msg("Add metadata to image:\n - DateTimeOriginal=%s\n - GPS=(%s, %s)" % (memory_dt, memory['location']['latitude'], memory['location']['longitude']))
     et().set_tags(img_names,
@@ -114,11 +128,15 @@ def apply_memory_on_imgs(memory: json, memory_dt: datetime):
 
 
 def export_images(memories: json):
+  """
+  Exports all images from the Photos/post directory to the corresponding output folder
+  """
   memory_count = len(memories)
 
   for i, n in zip(memories, range(memory_count)):
     memory_dt = get_datetime_from_str(i['takenTime'])
 
+    # Checks if the memory is in the time span
     if time_span[0] <= memory_dt <= time_span[1]:
       verbose_msg("\nExport BeReal nr %s:" % n)
       apply_memory_on_imgs(i, memory_dt)
