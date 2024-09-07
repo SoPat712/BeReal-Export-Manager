@@ -18,6 +18,8 @@ def init_parser():
   parser.add_argument('-y', '--year', type=int, help="Exports the given year")
   parser.add_argument('-p', '--path', type=str, help="Set a custom output path (default ./out)")
   parser.add_argument('-v', '--verbose', action=argparse.BooleanOptionalAction, help="Explain what is being done")
+  parser.add_argument('--no-memories', action='store_false', dest='memories', help="Don't export the memories")
+  parser.add_argument('--no-realmojis', action='store_false', dest='realmojis', help="Don't export the realmojis")
 
   args = parser.parse_args()
   if args.year and args.timespan:
@@ -186,13 +188,14 @@ if __name__ == '__main__':
   args = init_parser()
   init_global_var(args)
 
-  verbose_msg("Open memories.json file")
-  memories_file = open('memories.json', encoding='utf-8')
-  realmojis_file = open('realmojis.json', encoding='utf-8')
-  
-  
-  verbose_msg("Start exporting images")
-  # export_memories(json.load(f))
-  export_realmojis(json.load(realmojis_file))
+  if args.memories:
+    verbose_msg("Open memories.json file")
+    with open('memories.json', encoding='utf-8') as memories:
+      verbose_msg("Start exporting memories")
+      export_memories(json.load(memories))
 
-  realmojis_file.close()
+  if args.realmojis:
+    verbose_msg("Open realmojis.json file")
+    with open('realmojis.json', encoding='utf-8') as realmojis:
+      verbose_msg("Start exporting realmojis")
+      export_realmojis(json.load(realmojis))
