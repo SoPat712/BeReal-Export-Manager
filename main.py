@@ -98,7 +98,7 @@ def get_datetime_from_str(time: str):
   return dt.strptime(time, format_string)
 
 
-def export_img(old_img_name: str, img_name: str, img_dt: datetime, img_location):
+def export_img(old_img_name: str, img_name: str, img_dt: datetime, img_location=None):
   """
   Makes a copy of the image and adds exif tags to the image
   """
@@ -161,19 +161,25 @@ def export_realmojis(realmojis: json):
   Exports all realmojis from the Photos/realmoji directory to the corresponding output folder
   """
   realmoji_count = len(realmojis)
+  out_path_realmojis = out_path + "/realmojis"
 
-  for i, n in zip(realmojis, realmoji_count):
+  if not os.path.exists(out_path_realmojis):
+    verbose_msg("Create %s folder for memories output" % out_path_realmojis)
+    os.makedirs(out_path_realmojis)
+
+  for i, n in zip(realmojis, range(realmoji_count)):
     realmoji_dt = get_datetime_from_str(i['postedAt'])
+    img_name = "%s/%s.webp" % (out_path_realmojis, realmoji_dt.strftime('%Y-%m-%d_%H-%M-%S'))
 
     # Checks if the memory is in the time span
-    if time_span[0] <= realmoji_dt <= time_span[1]:
+    if time_span[0] <= realmoji_dt <= time_span[1] and i['isInstant']:
       verbose_msg("\nExport Memory nr %s:" % n)
-      # export_memory(i, realmoji_dt)
+      export_img("./Photos/realmoji/" + get_img_filename(i['media']), img_name, realmoji_dt)
 
     if verbose:
-      printProgressBar(n+1, realmoji_dt, prefix="Exporting Images", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")), printEnd='\n')
+      printProgressBar(n+1, realmoji_count, prefix="Exporting Images", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")), printEnd='\n')
     else:
-      printProgressBar(n+1, realmoji_dt, prefix="Exporting Images")
+      printProgressBar(n+1, realmoji_count, prefix="Exporting Images", suffix=("- Current Date: %s" % realmoji_dt.strftime("%Y-%m-%d")))
 
 
 if __name__ == '__main__':
@@ -181,10 +187,12 @@ if __name__ == '__main__':
   init_global_var(args)
 
   verbose_msg("Open memories.json file")
-  f = open('memories.json')
+  memories_file = open('memories.json', encoding='utf-8')
+  realmojis_file = open('realmojis.json', encoding='utf-8')
   
   
   verbose_msg("Start exporting images")
-  export_memories(json.load(f))
+  # export_memories(json.load(f))
+  export_realmojis(json.load(realmojis_file))
 
-  f.close()
+  realmojis_file.close()
