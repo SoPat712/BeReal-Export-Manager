@@ -101,35 +101,6 @@ def get_datetime_from_str(time: str):
   return dt.strptime(time, format_string)
 
 
-def add_caption(image_path, caption, output_path):
-    # Load the image
-    image = Image.open(image_path)
-    
-    # Create a new image with extra space at the bottom for the caption
-    width, height = image.size
-    caption_space_height = 100
-    new_height = height + caption_space_height
-    new_image = Image.new("RGB", (width, new_height), "white")
-    
-    # Paste the original image onto the new image
-    new_image.paste(image, (0, 0))
-    
-    # Prepare the draw object and font
-    draw = ImageDraw.Draw(new_image)
-    font = ImageFont.truetype("arial.ttf", 40)
-    
-    # Calculate the position for the caption
-    text_width, text_height = draw.textsize(caption, font=font)
-    text_x = (width - text_width) / 2
-    text_y = height + (caption_space_height - text_height) / 2
-    
-    # Add the caption to the image
-    draw.text((text_x, text_y), caption, fill="black", font=font)
-    
-    # Save the new image
-    new_image.save(output_path, "WEBP")
-
-
 def export_img(old_img_name: str, img_name: str, img_dt: datetime, img_location=None):
   """
   Makes a copy of the image and adds exif tags to the image
