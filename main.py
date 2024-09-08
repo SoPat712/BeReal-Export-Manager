@@ -5,6 +5,7 @@ from shutil import copy2 as cp
 import datetime
 from datetime import datetime as dt
 import argparse
+from PIL import Image, ImageDraw, ImageFont
 
 
 def init_parser():
@@ -100,6 +101,35 @@ def get_datetime_from_str(time: str):
   return dt.strptime(time, format_string)
 
 
+def add_caption(image_path, caption, output_path):
+    # Load the image
+    image = Image.open(image_path)
+    
+    # Create a new image with extra space at the bottom for the caption
+    width, height = image.size
+    caption_space_height = 100
+    new_height = height + caption_space_height
+    new_image = Image.new("RGB", (width, new_height), "white")
+    
+    # Paste the original image onto the new image
+    new_image.paste(image, (0, 0))
+    
+    # Prepare the draw object and font
+    draw = ImageDraw.Draw(new_image)
+    font = ImageFont.truetype("arial.ttf", 40)
+    
+    # Calculate the position for the caption
+    text_width, text_height = draw.textsize(caption, font=font)
+    text_x = (width - text_width) / 2
+    text_y = height + (caption_space_height - text_height) / 2
+    
+    # Add the caption to the image
+    draw.text((text_x, text_y), caption, fill="black", font=font)
+    
+    # Save the new image
+    new_image.save(output_path, "WEBP")
+
+
 def export_img(old_img_name: str, img_name: str, img_dt: datetime, img_location=None):
   """
   Makes a copy of the image and adds exif tags to the image
@@ -137,27 +167,22 @@ def export_memories(memories: json):
 
   for i, n in zip(memories, range(memory_count)):
     memory_dt = get_datetime_from_str(i['takenTime'])
-    types = ['front', 'back']
-    img_names = ["%s/%s_%s.webp" % (out_path_memories, memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), type)
+    types = [('frontImage', 'webp'), ('backImage', 'webp')]
+    if 'btsMedia' in i:
+      types.append(('btsMedia', 'mp4'))
+    img_names = ["%s/%s_%s.%s" % (out_path_memories, memory_dt.strftime('%Y-%m-%d_%H-%M-%S'), type[0].removesuffix('Image').removesuffix('Media'), type[1])
                  for type in types]
 
     # Checks if the memory is in the time span
     if time_span[0] <= memory_dt <= time_span[1]:
       for img_name, type in zip(img_names, types):
-        old_img_name = "./Photos/post/" + get_img_filename(i[type+'Image'])
+        old_img_name = "./Photos/post/" + get_img_filename(i[type[0]])
 
-        verbose_msg("\nExport Memory nr %s %s:" % (n, type))
+        verbose_msg("\nExport Memory nr %s %s:" % (n, type[0]))
         if 'location' in i:
           export_img(old_img_name, img_name, memory_dt, i['location'])
         else:
           export_img(old_img_name, img_name, memory_dt)
-      if 'btsMedia' in i and 'location' in i:
-        export_img("./Photos/post/" + get_img_filename(i['btsMedia']),
-                   "%s/%s.mp4" % (out_path_memories, memory_dt.strftime('%Y-%m-%d_%H-%M-%S')),
-                   memory_dt, i['location'])
-      if 'btsMedia' in i:
-        export_img("./Photos/post/" + get_img_filename(i['btsMedia']),
-                   "%s/%s.mp4" % (out_path_memories, memory_dt.strftime('%Y-%m-%d_%H-%M-%S')), memory_dt)
 
     if verbose:
       printProgressBar(n+1, memory_count, prefix="Exporting Memories", suffix=("- " + memory_dt.strftime("%Y-%m-%d")), printEnd='\n')
