@@ -151,6 +151,13 @@ def export_memories(memories: json):
           export_img(old_img_name, img_name, memory_dt, i['location'])
         else:
           export_img(old_img_name, img_name, memory_dt)
+      if 'btsMedia' in i and 'location' in i:
+        export_img("./Photos/post/" + get_img_filename(i['btsMedia']),
+                   "%s/%s.mp4" % (out_path_memories, memory_dt.strftime('%Y-%m-%d_%H-%M-%S')),
+                   memory_dt, i['location'])
+      if 'btsMedia' in i:
+        export_img("./Photos/post/" + get_img_filename(i['btsMedia']),
+                   "%s/%s.mp4" % (out_path_memories, memory_dt.strftime('%Y-%m-%d_%H-%M-%S')), memory_dt)
 
     if verbose:
       printProgressBar(n+1, memory_count, prefix="Exporting Memories", suffix=("- " + memory_dt.strftime("%Y-%m-%d")), printEnd='\n')
