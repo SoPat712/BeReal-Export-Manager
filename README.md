@@ -21,7 +21,7 @@ It simple processes the data from the BeReal export and exports the images(as we
 
 ## Usage
 
-To run the script, use the following command:
+To export your images run the script within the BeReal export folder:
 ```sh
 python bereal_exporter.py [OPTIONS]
 ```
@@ -54,6 +54,11 @@ python bereal_exporter.py [OPTIONS]
 3. Export data to a custom output path:
     ```sh
     python bereal_exporter.py --path /path/to/output
+    ```
+
+4. Specify the BeReal export folder:
+    ```sh
+    python bereal_exporter.py --bereal-path /path/to/export
     ```
 
 4. Use portable installed exiftool application:
