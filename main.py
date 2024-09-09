@@ -16,7 +16,8 @@ def init_parser() -> argparse.Namespace:
                                                          "Valid format: 'DD.MM.YYYY-DD.MM.YYYY'\n"
                                                          "Wildcards can be used: 'DD.MM.YYYY-*'")
   parser.add_argument('-y', '--year', type=int, help="Exports the given year")
-  parser.add_argument('-p', '--path', type=str, help="Set a custom output path (default ./out)")
+  parser.add_argument('-p', '--path', type=str, default="./out", help="Set a custom output path (default ./out)")
+  parser.add_argument('--bereal-path', dest='bereal_path', type=str,default=".", help="Set a custom BeReal path (default ./)")
   parser.add_argument('-v', '--verbose', action='store_true', default=False, help="Explain what is being done")
   parser.add_argument('--no-memories', action='store_false', default=True, dest='memories', help="Don't export the memories")
   parser.add_argument('--no-realmojis', action='store_false', default=True, dest='realmojis', help="Don't export the realmojis")
@@ -29,7 +30,8 @@ def init_parser() -> argparse.Namespace:
 class BeRealExporter:
   def __init__(self, args: argparse.Namespace):
     self.time_span = self.init_time_span(args)
-    self.out_path = args.path.strip().removesuffix('/') if args.path else "./out"
+    self.out_path = args.path.strip().removesuffix('/')
+    self.bereal_path = args.bereal_path.strip().removesuffix('/')
     self.verbose = args.verbose
 
 
@@ -126,15 +128,15 @@ class BeRealExporter:
 
       if self.time_span[0] <= memory_dt <= self.time_span[1]:
         for img_name, type in zip(img_names, types):
-          old_img_name = f"./Photos/post/{self.get_img_filename(memory[type[0]])}"
+          old_img_name = os.path.join(self.bereal_path, f"Photos/post/{self.get_img_filename(memory[type[0]])}")
           self.verbose_msg(f"Export Memory nr {i} {type[0]}:")
           if 'location' in memory:
             self.export_img(old_img_name, img_name, memory_dt, memory['location'])
           else:
             self.export_img(old_img_name, img_name, memory_dt)
 
-          self.print_progress_bar(i + 1, memory_count, prefix="Exporting Memories", suffix=f"- {memory_dt.strftime('%Y-%m-%d')}")
-          self.verbose_msg(f"\n\n{'#'*100}\n")
+      self.print_progress_bar(i + 1, memory_count, prefix="Exporting Memories", suffix=f"- {memory_dt.strftime('%Y-%m-%d')}")
+      self.verbose_msg(f"\n\n{'#'*100}\n")
 
 
   def export_realmojis(self, realmojis: list):
@@ -152,9 +154,9 @@ class BeRealExporter:
       img_name = f"{out_path_realmojis}/{realmoji_dt.strftime('%Y-%m-%d_%H-%M-%S')}.webp"
       if self.time_span[0] <= realmoji_dt <= self.time_span[1] and realmoji['isInstant']:
         self.verbose_msg(f"Export Realmoji nr {i}:")
-        self.export_img(f"./Photos/realmoji/{self.get_img_filename(realmoji['media'])}", img_name, realmoji_dt)
-        self.print_progress_bar(i + 1, realmoji_count, prefix="Exporting Realmojis", suffix=f"- {realmoji_dt.strftime('%Y-%m-%d')}")
-        self.verbose_msg(f"\n\n{'#'*100}\n")
+        self.export_img(os.path.join(self.bereal_path, f"Photos/realmoji/{self.get_img_filename(realmoji['media'])}"), img_name, realmoji_dt)
+      self.print_progress_bar(i + 1, realmoji_count, prefix="Exporting Realmojis", suffix=f"- {realmoji_dt.strftime('%Y-%m-%d')}")
+      self.verbose_msg(f"\n\n{'#'*100}\n")
 
 
 if __name__ == '__main__':
@@ -164,7 +166,7 @@ if __name__ == '__main__':
   if args.memories:
     exporter.verbose_msg("Open memories.json file")
     try:
-      with open('memories.json', encoding='utf-8') as memories_file:
+      with open(os.path.join(exporter.bereal_path, 'memories.json'), encoding='utf-8') as memories_file:
         exporter.verbose_msg("Start exporting memories")
         exporter.export_memories(json.load(memories_file))
     except FileNotFoundError:
@@ -175,7 +177,7 @@ if __name__ == '__main__':
   if args.realmojis:
     exporter.verbose_msg("Open realmojis.json file")
     try:
-      with open('realmojis.json', encoding='utf-8') as realmojis_file:
+      with open(os.path.join(exporter.bereal_path, 'realmojis.json'), encoding='utf-8') as realmojis_file:
         exporter.verbose_msg("Start exporting realmojis")
         exporter.export_realmojis(json.load(realmojis_file))
     except FileNotFoundError:
