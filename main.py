@@ -12,15 +12,16 @@ def init_parser() -> argparse.Namespace:
   Initializes the argparse module.
   """
   parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+  parser.add_argument('-v', '--verbose', default=False, action='store_true', help="Explain what is being done")
+  parser.add_argument('--exiftool-path', dest='exiftool_path', type=str, help="Set the path to the ExifTool executable (needed if it isn't on the $PATH)")
   parser.add_argument('-t', '--timespan', type=str, help="Exports the given timespan\n"
                                                          "Valid format: 'DD.MM.YYYY-DD.MM.YYYY'\n"
                                                          "Wildcards can be used: 'DD.MM.YYYY-*'")
   parser.add_argument('-y', '--year', type=int, help="Exports the given year")
-  parser.add_argument('-p', '--path', type=str, default="./out", help="Set a custom output path (default ./out)")
-  parser.add_argument('--bereal-path', dest='bereal_path', type=str,default=".", help="Set a custom BeReal path (default ./)")
-  parser.add_argument('-v', '--verbose', action='store_true', default=False, help="Explain what is being done")
-  parser.add_argument('--no-memories', action='store_false', default=True, dest='memories', help="Don't export the memories")
-  parser.add_argument('--no-realmojis', action='store_false', default=True, dest='realmojis', help="Don't export the realmojis")
+  parser.add_argument('-p', '--out-path', dest='out_path', type=str, default="./out", help="Set a custom output path (default ./out)")
+  parser.add_argument('--bereal-path', dest='bereal_path', type=str, default=".", help="Set a custom BeReal path (default ./)")
+  parser.add_argument('--no-memories', dest='memories', default=True, action='store_false', help="Don't export the memories")
+  parser.add_argument('--no-realmojis', dest='realmojis', default=True, action='store_false', help="Don't export the realmojis")
   args = parser.parse_args()
   if args.year and args.timespan:
       print("Timespan argument will be prioritized")
@@ -30,7 +31,8 @@ def init_parser() -> argparse.Namespace:
 class BeRealExporter:
   def __init__(self, args: argparse.Namespace):
     self.time_span = self.init_time_span(args)
-    self.out_path = args.path.strip().removesuffix('/')
+    self.exiftool_path = args.exiftool_path
+    self.out_path = args.out_path.strip().removesuffix('/')
     self.bereal_path = args.bereal_path.strip().removesuffix('/')
     self.verbose = args.verbose
 
@@ -105,7 +107,11 @@ class BeRealExporter:
         })
     else:
         self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}")
-    et().set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+
+    if self.exiftool_path:
+      et(executable=self.exiftool_path).set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+    else:
+      et().set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
 
 
   def export_memories(self, memories: list):
