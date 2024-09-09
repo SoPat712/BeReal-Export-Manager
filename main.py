@@ -6,6 +6,7 @@ from datetime import datetime as dt
 import argparse
 
 
+
 def init_parser() -> argparse.Namespace:
   """
   Initializes the argparse module.
@@ -30,6 +31,8 @@ class BeRealExporter:
     self.time_span = self.init_time_span(args)
     self.out_path = args.path.strip().removesuffix('/') if args.path else "./out"
     self.verbose = args.verbose
+
+
   @staticmethod
   def init_time_span(args: argparse.Namespace) -> tuple:
     """
@@ -44,16 +47,21 @@ class BeRealExporter:
         return dt(args.year, 1, 1), dt(args.year, 12, 31)
     else:
         return dt.fromtimestamp(0), dt.now()
+
+
   def verbose_msg(self, msg: str):
     """
     Prints an explanation of what is being done to the terminal.
     """
     if self.verbose:
         print(msg)
+
+
   @staticmethod
   def print_progress_bar(iteration: int, total: int, prefix: str = '', suffix: str = '', decimals: int = 1, length: int = 60, fill: str = '█', print_end: str = "\r"):
     """
     Call in a loop to create terminal progress bar.
+    Not my creation: https://stackoverflow.com/questions/3173320/text-progress-bar-in-terminal-with-block-characters
     """
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
@@ -61,12 +69,16 @@ class BeRealExporter:
     print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=print_end)
     if iteration == total:
         print()
+
+
   @staticmethod
   def get_img_filename(image: dict) -> str:
     """
     Returns the image filename from an image object (frontImage, backImage, primary, secondary).
     """
     return image['path'].split("/")[-1]
+
+
   @staticmethod
   def get_datetime_from_str(time: str) -> dt:
     """
@@ -74,6 +86,8 @@ class BeRealExporter:
     """
     format_string = "%Y-%m-%dT%H:%M:%S.%fZ"
     return dt.strptime(time, format_string)
+
+
   def export_img(self, old_img_name: str, img_name: str, img_dt: dt, img_location=None):
     """
     Makes a copy of the image and adds EXIF tags to the image.
@@ -90,6 +104,8 @@ class BeRealExporter:
     else:
         self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}")
     et().set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+
+
   def export_memories(self, memories: list):
     """
     Exports all memories from the Photos/post directory to the corresponding output folder.
@@ -99,21 +115,28 @@ class BeRealExporter:
     if not os.path.exists(out_path_memories):
         self.verbose_msg(f"Create {out_path_memories} folder for memories output")
         os.makedirs(out_path_memories)
-    for n, memory in enumerate(memories):
-        memory_dt = self.get_datetime_from_str(memory['takenTime'])
-        types = [('frontImage', 'webp'), ('backImage', 'webp')]
-        if 'btsMedia' in memory:
-            types.append(('btsMedia', 'mp4'))
-        img_names = [f"{out_path_memories}/{memory_dt.strftime('%Y-%m-%d_%H-%M-%S')}_{t[0].removesuffix('Image').removesuffix('Media')}.{t[1]}" for t in types]
-        if self.time_span[0] <= memory_dt <= self.time_span[1]:
-            for img_name, type in zip(img_names, types):
-                old_img_name = f"./Photos/post/{self.get_img_filename(memory[type[0]])}"
-                self.verbose_msg(f"\nExport Memory nr {n} {type[0]}:")
-                if 'location' in memory:
-                    self.export_img(old_img_name, img_name, memory_dt, memory['location'])
-                else:
-                    self.export_img(old_img_name, img_name, memory_dt)
-            self.print_progress_bar(n + 1, memory_count, prefix="Exporting Memories", suffix=f"- {memory_dt.strftime('%Y-%m-%d')}")
+
+    for i, memory in enumerate(memories):
+      memory_dt = self.get_datetime_from_str(memory['takenTime'])
+      types = [('frontImage', 'webp'), ('backImage', 'webp')]
+      if 'btsMedia' in memory:
+          types.append(('btsMedia', 'mp4'))
+      img_names = [f"{out_path_memories}/{memory_dt.strftime('%Y-%m-%d_%H-%M-%S')}_{t[0].removesuffix('Image').removesuffix('Media')}.{t[1]}"
+                   for t in types]
+
+      if self.time_span[0] <= memory_dt <= self.time_span[1]:
+        for img_name, type in zip(img_names, types):
+          old_img_name = f"./Photos/post/{self.get_img_filename(memory[type[0]])}"
+          self.verbose_msg(f"Export Memory nr {i} {type[0]}:")
+          if 'location' in memory:
+            self.export_img(old_img_name, img_name, memory_dt, memory['location'])
+          else:
+            self.export_img(old_img_name, img_name, memory_dt)
+
+          self.print_progress_bar(i + 1, memory_count, prefix="Exporting Memories", suffix=f"- {memory_dt.strftime('%Y-%m-%d')}")
+          self.verbose_msg(f"\n\n{'#'*100}\n")
+
+
   def export_realmojis(self, realmojis: list):
     """
     Exports all realmojis from the Photos/realmoji directory to the corresponding output folder.
@@ -121,15 +144,17 @@ class BeRealExporter:
     realmoji_count = len(realmojis)
     out_path_realmojis = os.path.join(self.out_path, "realmojis")
     if not os.path.exists(out_path_realmojis):
-        self.verbose_msg(f"Create {out_path_realmojis} folder for memories output")
-        os.makedirs(out_path_realmojis)
-    for n, realmoji in enumerate(realmojis):
-        realmoji_dt = self.get_datetime_from_str(realmoji['postedAt'])
-        img_name = f"{out_path_realmojis}/{realmoji_dt.strftime('%Y-%m-%d_%H-%M-%S')}.webp"
-        if self.time_span[0] <= realmoji_dt <= self.time_span[1] and realmoji['isInstant']:
-            self.verbose_msg(f"\nExport Realmoji nr {n}:")
-            self.export_img(f"./Photos/realmoji/{self.get_img_filename(realmoji['media'])}", img_name, realmoji_dt)
-            self.print_progress_bar(n + 1, realmoji_count, prefix="Exporting Realmojis", suffix=f"- Current Date: {realmoji_dt.strftime('%Y-%m-%d')}")
+      self.verbose_msg(f"Create {out_path_realmojis} folder for memories output")
+      os.makedirs(out_path_realmojis)
+
+    for i, realmoji in enumerate(realmojis):
+      realmoji_dt = self.get_datetime_from_str(realmoji['postedAt'])
+      img_name = f"{out_path_realmojis}/{realmoji_dt.strftime('%Y-%m-%d_%H-%M-%S')}.webp"
+      if self.time_span[0] <= realmoji_dt <= self.time_span[1] and realmoji['isInstant']:
+        self.verbose_msg(f"Export Realmoji nr {i}:")
+        self.export_img(f"./Photos/realmoji/{self.get_img_filename(realmoji['media'])}", img_name, realmoji_dt)
+        self.print_progress_bar(i + 1, realmoji_count, prefix="Exporting Realmojis", suffix=f"- {realmoji_dt.strftime('%Y-%m-%d')}")
+        self.verbose_msg(f"\n\n{'#'*100}\n")
 
 
 if __name__ == '__main__':
