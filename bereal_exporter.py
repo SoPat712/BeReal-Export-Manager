@@ -135,11 +135,14 @@ class BeRealExporter:
       if self.time_span[0] <= memory_dt <= self.time_span[1]:
         for img_name, type in zip(img_names, types):
           old_img_name = os.path.join(self.bereal_path, f"Photos/post/{self.get_img_filename(memory[type[0]])}")
-          self.verbose_msg(f"Export Memory nr {i} {type[0]}:")
-          if 'location' in memory:
-            self.export_img(old_img_name, img_name, memory_dt, memory['location'])
+          if os.path.isfile(old_img_name):
+            self.verbose_msg(f"Export Memory nr {i} {type[0]}:")
+            if 'location' in memory:
+              self.export_img(old_img_name, img_name, memory_dt, memory['location'])
+            else:
+              self.export_img(old_img_name, img_name, memory_dt)
           else:
-            self.export_img(old_img_name, img_name, memory_dt)
+            self.verbose_msg(f"File {old_img_name} not found. Skipping this memory.")
 
       self.print_progress_bar(i + 1, memory_count, prefix="Exporting Memories", suffix=f"- {memory_dt.strftime('%Y-%m-%d')}")
       self.verbose_msg(f"\n\n{'#'*100}\n")
