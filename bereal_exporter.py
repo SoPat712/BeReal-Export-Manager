@@ -97,21 +97,25 @@ class BeRealExporter:
     Makes a copy of the image and adds EXIF tags to the image.
     """
     self.verbose_msg(f"Export {old_img_name} image to {img_name}")
-    cp(old_img_name, img_name)
-    tags = {"DateTimeOriginal": img_dt.strftime("%Y:%m:%d %H:%M:%S")}
-    if img_location:
-        self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}\n - GPS=({img_location['latitude']}, {img_location['longitude']})")
-        tags.update({
-            "GPSLatitude*": img_location['latitude'],
-            "GPSLongitude*": img_location['longitude']
-        })
-    else:
-        self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}")
 
-    if self.exiftool_path:
-      et(executable=self.exiftool_path).set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+    if os.path.isfile(old_img_name):
+      cp(old_img_name, img_name)
+      tags = {"DateTimeOriginal": img_dt.strftime("%Y:%m:%d %H:%M:%S")}
+      if img_location:
+          self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}\n - GPS=({img_location['latitude']}, {img_location['longitude']})")
+          tags.update({
+              "GPSLatitude*": img_location['latitude'],
+              "GPSLongitude*": img_location['longitude']
+          })
+      else:
+          self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}")
+ 
+      if self.exiftool_path:
+        et(executable=self.exiftool_path).set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+      else:
+        et().set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
     else:
-      et().set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+      self.verbose_msg(f"File {old_img_name} not found. Skipping this image.")
 
 
   def export_memories(self, memories: list):
@@ -135,14 +139,11 @@ class BeRealExporter:
       if self.time_span[0] <= memory_dt <= self.time_span[1]:
         for img_name, type in zip(img_names, types):
           old_img_name = os.path.join(self.bereal_path, f"Photos/post/{self.get_img_filename(memory[type[0]])}")
-          if os.path.isfile(old_img_name):
-            self.verbose_msg(f"Export Memory nr {i} {type[0]}:")
-            if 'location' in memory:
-              self.export_img(old_img_name, img_name, memory_dt, memory['location'])
-            else:
-              self.export_img(old_img_name, img_name, memory_dt)
+          self.verbose_msg(f"Export Memory nr {i} {type[0]}:")
+          if 'location' in memory:
+            self.export_img(old_img_name, img_name, memory_dt, memory['location'])
           else:
-            self.verbose_msg(f"File {old_img_name} not found. Skipping this memory.")
+            self.export_img(old_img_name, img_name, memory_dt)
 
       self.print_progress_bar(i + 1, memory_count, prefix="Exporting Memories", suffix=f"- {memory_dt.strftime('%Y-%m-%d')}")
       self.verbose_msg(f"\n\n{'#'*100}\n")
