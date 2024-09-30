@@ -97,21 +97,25 @@ class BeRealExporter:
     Makes a copy of the image and adds EXIF tags to the image.
     """
     self.verbose_msg(f"Export {old_img_name} image to {img_name}")
-    cp(old_img_name, img_name)
-    tags = {"DateTimeOriginal": img_dt.strftime("%Y:%m:%d %H:%M:%S")}
-    if img_location:
-        self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}\n - GPS=({img_location['latitude']}, {img_location['longitude']})")
-        tags.update({
-            "GPSLatitude*": img_location['latitude'],
-            "GPSLongitude*": img_location['longitude']
-        })
-    else:
-        self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}")
 
-    if self.exiftool_path:
-      et(executable=self.exiftool_path).set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+    if os.path.isfile(old_img_name):
+      cp(old_img_name, img_name)
+      tags = {"DateTimeOriginal": img_dt.strftime("%Y:%m:%d %H:%M:%S")}
+      if img_location:
+          self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}\n - GPS=({img_location['latitude']}, {img_location['longitude']})")
+          tags.update({
+              "GPSLatitude*": img_location['latitude'],
+              "GPSLongitude*": img_location['longitude']
+          })
+      else:
+          self.verbose_msg(f"Add metadata to image:\n - DateTimeOriginal={img_dt}")
+ 
+      if self.exiftool_path:
+        et(executable=self.exiftool_path).set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+      else:
+        et().set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
     else:
-      et().set_tags(img_name, tags=tags, params=["-P", "-overwrite_original"])
+      self.verbose_msg(f"File {old_img_name} not found. Skipping this image.")
 
 
   def export_memories(self, memories: list):
