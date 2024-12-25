@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+#My stuff
+betterSoFar.py
+greatSoFar.py
+
 # json files
 *.json
 
