@@ -39,6 +39,7 @@ python bereal_exporter.py [OPTIONS]
 - `--no-memories`: Don't export the memories.
 - `--no-realmojis`: Don't export the realmojis.
 - `--no-composites`: Don't create composites with the front image overlayed on the back.
+- `--default-timezone "America/New_York"`: Set fallback timezone, since memories.json has UTC times.
 
 ## Examples
 
