@@ -1,1 +1,5 @@
-pyexiftool==0.5.6
+Pillow
+argparse
+pytz
+timezonefinder
+pyexiftool
