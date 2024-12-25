@@ -539,8 +539,8 @@ def run_in_curses():
             except json.JSONDecodeError:
                 logger.print_log("Error decoding realmojis.json file.", force=True)
 
-        logger.print_log("\nAll done. Press any key to exit.")
-        stdscr.getch()
+        logger.print_log("\nAll done.")
+        # Removed the prompt and getch() to allow curses to exit automatically
 
     try:
         curses.wrapper(main_curses)
