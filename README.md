@@ -4,6 +4,12 @@ This python script doesn't export photos and realmojis from the social media pla
 
 It simple processes the data from the BeReal export and exports the images(as well BTS-videos) with added metadata, such as the original date and location.
 
+I'm gonna be upfront and say it's BeReal's fault the dates are wonky on the output files, idk why they chose to save the time like this:
+
+        "takenTime": "2024-12-24T01:27:16.726Z",
+        "berealMoment": "2024-12-23T22:39:05.327Z",
+instead of the way everyone else always does it with UNIX Epoch time, but it makes it pretty hard to find out what time the picture was taken, and to properly tag the photos with the correct time. Scroll down to arguments and see default-timezone for a little more info.
+
 ## Installation
 
 1. Clone the repository:
