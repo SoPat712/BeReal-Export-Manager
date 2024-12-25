@@ -38,6 +38,7 @@ python bereal_exporter.py [OPTIONS]
 - `--bereal-path`: Set a custom BeReal path (default `./`)
 - `--no-memories`: Don't export the memories.
 - `--no-realmojis`: Don't export the realmojis.
+- `--no-composites`: Don't create composites with the front image overlayed on the back.
 
 ## Examples
 
