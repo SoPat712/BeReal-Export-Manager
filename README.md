@@ -40,6 +40,7 @@ python bereal_exporter.py [OPTIONS]
 - `--no-realmojis`: Don't export the realmojis.
 - `--no-composites`: Don't create composites with the front image overlayed on the back.
 - `--default-timezone "America/New_York"`: Set fallback timezone, since memories.json has UTC times.
+This doesn't work the greatest but I do recommend running it with whatever timezone you're in. It goes Lat/Long time finding -> Default Timezone -> UTC or whatever BeReal is providing.
 
 ## Examples
 
