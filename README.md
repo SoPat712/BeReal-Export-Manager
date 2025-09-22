@@ -15,8 +15,8 @@ instead of the way everyone else always does it with UNIX Epoch time, but it mak
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/Lukullul/bereal-exporter.git
-    cd bereal-exporter
+    git@github.com:SoPat712/BeReal-Export-Manager.git 
+    cd BeReal-Export-Manager
     ```
 
 2. Install the required Python packages:
